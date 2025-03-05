@@ -45,13 +45,16 @@ try:
 except ImportError:
     import shiboken2 as shiboken
 
+CLASSES = {}
+CLASSES['45min'] = [60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 120, 120, 120, 120, 120, 120, 120, 120, 300, 300, 300]
+# CLASSES['45min'] = [6, 6, 8, 10]
 
 def ms_to_time_string(ms):
     mins = ms // 60000
     mod_result = ms % 60000
     secs = mod_result // 1000
     # mod_result = mod_result % 1000
-    return "{}:{}".format(mins, secs)
+    return "{:02}:{:02}".format(mins, secs)
 
 def old_div(a, b):
    if isinstance(a, numbers.Integral) and isinstance(b, numbers.Integral):
@@ -129,10 +132,11 @@ class PoseLibraryViewerUI(QtWidgets.QMainWindow):
         self.session_running = False
         self.current_image_time = 120000
         self.update_interval = 1000
+        self.class_img_index = 0
         self.update_timer = QtCore.QTimer()
         self.image_timer = QtCore.QTimer()
         self.update_timer.timeout.connect(self.update_image_viewer)
-        self.image_timer.timeout.connect(self.start_next_image)
+        self.image_timer.timeout.connect(partial(self.start_next_image, 1))
 
         self.ui.pauseButton.clicked.connect(self.start_session)
         self.ui.stopButton.clicked.connect(self.stop_session)
@@ -159,12 +163,18 @@ class PoseLibraryViewerUI(QtWidgets.QMainWindow):
         self.ui.timerLabel.setText(label_text)
         self.update_timer.start(self.update_interval)
 
-    def start_next_image(self):
-        self.next_image(1)
-        self.image_timer.start(self.current_image_time)
+    def start_next_image(self, increment):
+        if self.class_img_index < len(CLASSES['45min']) - 1:
+            self.current_image_time = CLASSES['45min'][self.class_img_index] * 1000
+            self.class_img_index += 1
+            self.next_image(increment)
+            self.image_timer.start(self.current_image_time)
+        else:
+            self.stop_session()
 
     def start_session(self):
-        self.start_next_image()
+        self.class_img_index = 0
+        self.start_next_image(0)
         self.update_image_viewer()
 
     def stop_session(self):
@@ -183,6 +193,9 @@ class PoseLibraryViewerUI(QtWidgets.QMainWindow):
 
         self.image_qt = QImage(self._image_paths[self._image_indexes[self._image_index]])
         self.imageViewer.setBasePixmap(QPixmap.fromImage(self.image_qt))
+        if self.image_timer.isActive():
+            self.image_timer.start()
+            self.update_image_viewer()
 
 
 
