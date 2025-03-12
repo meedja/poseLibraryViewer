@@ -30,13 +30,13 @@ import random
 
 try:
     from PySide6 import QtWidgets, QtUiTools, QtCore
-    from PySide6.QtWidgets import QApplication, QMainWindow, QGraphicsScene, QFileDialog, QGraphicsPixmapItem
+    from PySide6.QtWidgets import QApplication, QMainWindow, QGraphicsScene, QFileDialog, QGraphicsPixmapItem, QButtonGroup
     from PySide6.QtUiTools import QUiLoader
     from PySide6.QtCore import QFile
     from PySide6.QtGui import QImage, QPixmap
 except ImportError:
     from PySide2 import QtWidgets, QtUiTools, QtCore
-    from PySide2.QtWidgets import QApplication, QMainWindow, QGraphicsScene, QFileDialog, QGraphicsPixmapItem
+    from PySide2.QtWidgets import QApplication, QMainWindow, QGraphicsScene, QFileDialog, QGraphicsPixmapItem, QButtonGroup
     from PySide2.QtUiTools import QUiLoader
     from PySide2.QtCore import QFile
     from PySide2.QtGui import QImage, QPixmap, QPainter
@@ -46,8 +46,22 @@ except ImportError:
     import shiboken2 as shiboken
 
 CLASSES = {}
-CLASSES['45min'] = [60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 120, 120, 120, 120, 120, 120, 120, 120, 300, 300, 300]
-# CLASSES['45min'] = [6, 6, 8, 10]
+CLASSES['10min'] = [60, 60, 60, 60, 60, 60, 120, 120]
+CLASSES['20min'] = [60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 120, 120, 120, 120, 120]
+CLASSES['30min'] = [60, 60, 60, 60, 60, 60, 60, 60, 120, 120, 120, 120, 120, 120, 300, 300]
+CLASSES['45min'] = [60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 120, 120, 120, 120, 120, 120, 120, 120, 120, 300, 300, 300]
+CLASSES['60min'] = [60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 120, 120, 120, 120, 120, 120, 120, 120, 120, 300, 300, 300, 300, 600]
+
+def generate_class_description(sequence):
+    times = sorted([*{*sequence}])
+    class_str = ""
+
+    for t in times:
+        c = sequence.count(t)
+        minutes = int(t / 60)
+        minutes_str = "minutes" if minutes > 1 else "minute"
+        class_str += '{} poses in {} {}\n'.format(c, minutes, minutes_str)
+    return class_str
 
 def ms_to_time_string(ms):
     mins = ms // 60000
@@ -55,6 +69,12 @@ def ms_to_time_string(ms):
     secs = mod_result // 1000
     # mod_result = mod_result % 1000
     return "{:02}:{:02}".format(mins, secs)
+
+def get_timer_value(timer_str):
+    if timer_str == "30s":
+        return 30
+    else:
+        return int(timer_str[:-1]) * 60
 
 def old_div(a, b):
    if isinstance(a, numbers.Integral) and isinstance(b, numbers.Integral):
@@ -129,6 +149,9 @@ class PoseLibraryViewerUI(QtWidgets.QMainWindow):
         file.close()
         self.setCentralWidget(self.ui.mainWidget) # Set loaded UI as central widget
 
+        self._image_indexes = None
+        self.session_type = None
+        self.current_class = None
         self.session_running = False
         self.current_image_time = 120000
         self.update_interval = 1000
@@ -150,6 +173,29 @@ class PoseLibraryViewerUI(QtWidgets.QMainWindow):
         self.ui.pushButton.clicked.connect(self.load)
         self.ui.nextButton.clicked.connect(partial(self.next_image, 1))
         self.ui.prevButton.clicked.connect(partial(self.next_image, -1))
+        self.sessionTypeButtonGroup = QButtonGroup()
+        self.sessionTypeButtonGroup.buttonClicked.connect(self.update_session)
+        self.sessionTypeButtonGroup.addButton(self.ui.radioButtonStatic)
+        self.sessionTypeButtonGroup.addButton(self.ui.radioButtonClass)
+        self.sessionDurationButtonGroup = QButtonGroup()
+        self.sessionDurationButtonGroup.addButton(self.ui.radioButtonClass10min)
+        self.sessionDurationButtonGroup.addButton(self.ui.radioButtonClass20min)
+        self.sessionDurationButtonGroup.addButton(self.ui.radioButtonClass30min)
+        self.sessionDurationButtonGroup.addButton(self.ui.radioButtonClass45min)
+        self.sessionDurationButtonGroup.addButton(self.ui.radioButtonClass60min)
+        self.sessionDurationButtonGroup.buttonClicked.connect(self.update_session)
+        self.timerDurationButtonGroup = QButtonGroup()
+        self.timerDurationButtonGroup.addButton(self.ui.radioButton30s)
+        self.timerDurationButtonGroup.addButton(self.ui.radioButton1min)
+        self.timerDurationButtonGroup.addButton(self.ui.radioButton2min)
+        self.timerDurationButtonGroup.addButton(self.ui.radioButton5min)
+        self.timerDurationButtonGroup.addButton(self.ui.radioButton15min)
+        self.timerDurationButtonGroup.buttonClicked.connect(self.update_session)
+        self.imgOrderButtonGroup = QButtonGroup()
+        self.imgOrderButtonGroup.addButton(self.ui.radioButtonRandom)
+        self.imgOrderButtonGroup.addButton(self.ui.radioButtonSequential)
+        self.imgOrderButtonGroup.buttonClicked.connect(self.update_img_sequence)
+        self.update_session(None)
 
         # init settings
         script_name = os.path.basename(__file__)
@@ -158,19 +204,52 @@ class PoseLibraryViewerUI(QtWidgets.QMainWindow):
         # self.restoreSettings()
 
 
+    def update_img_sequence(self, button):
+        if self._image_indexes:
+            if button.text() == 'Random':
+                random.shuffle(self._image_indexes)
+            else:
+                self._image_indexes = sorted(self._image_indexes)
+            self.next_image(0)
+
+
+    def update_session(self, button):
+        if self.ui.radioButtonStatic.isChecked():
+            self.ui.groupBoxClassDuration.setVisible(False)
+            self.ui.groupBoxStaticTimer.setVisible(True)
+            timer_button = self.timerDurationButtonGroup.checkedButton()
+            if timer_button:
+                self.ui.textBrowser.setText("All images at {} interval".format(timer_button.text()))
+                self.session_type = "timer"
+                self.current_image_time = get_timer_value(timer_button.text()) * 1000
+                print(self.current_image_time)
+        else:
+            self.ui.groupBoxClassDuration.setVisible(True)
+            self.ui.groupBoxStaticTimer.setVisible(False)
+            class_button = self.sessionDurationButtonGroup.checkedButton()
+            if class_button:
+                self.ui.textBrowser.setText(generate_class_description(CLASSES[class_button.text()]))
+                self.session_type = "class"
+                self.class_list = CLASSES[class_button.text()]
+
     def update_image_viewer(self):
         label_text = "time: {}".format(ms_to_time_string(self.image_timer.remainingTime()))
         self.ui.timerLabel.setText(label_text)
         self.update_timer.start(self.update_interval)
 
     def start_next_image(self, increment):
-        if self.class_img_index < len(CLASSES['45min']) - 1:
-            self.current_image_time = CLASSES['45min'][self.class_img_index] * 1000
-            self.class_img_index += 1
-            self.next_image(increment)
-            self.image_timer.start(self.current_image_time)
-        else:
-            self.stop_session()
+        if self.session_type == 'class' and self.class_list:
+            if self.class_img_index < len(self.class_list) - 1:
+                self.current_image_time = self.class_list[self.class_img_index] * 1000
+                self.class_img_index += 1
+                self.next_image(increment)
+                self.image_timer.start(self.current_image_time)
+            else:
+                self.stop_session()
+        elif self.session_type == 'timer':
+                self.next_image(increment)
+                self.image_timer.start(self.current_image_time)
+
 
     def start_session(self):
         self.class_img_index = 0

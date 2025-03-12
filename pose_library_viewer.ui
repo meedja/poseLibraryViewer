@@ -194,7 +194,7 @@
              </property>
              <layout class="QHBoxLayout" name="horizontalLayout_6">
               <item>
-               <widget class="QRadioButton" name="radioButton_14">
+               <widget class="QRadioButton" name="radioButtonRandom">
                 <property name="text">
                  <string>Random</string>
                 </property>
@@ -204,7 +204,7 @@
                </widget>
               </item>
               <item>
-               <widget class="QRadioButton" name="radioButton_13">
+               <widget class="QRadioButton" name="radioButtonSequential">
                 <property name="text">
                  <string>Sequential</string>
                 </property>
@@ -214,25 +214,28 @@
             </widget>
            </item>
            <item>
-            <widget class="QGroupBox" name="groupBox_2">
+            <widget class="QGroupBox" name="groupBoxSessionType">
              <property name="title">
               <string>Session Type</string>
              </property>
              <layout class="QHBoxLayout" name="horizontalLayout_3">
               <item>
-               <widget class="QRadioButton" name="radioButton_7">
+               <widget class="QRadioButton" name="radioButtonStatic">
                 <property name="text">
                  <string>Static Timer</string>
                 </property>
                 <property name="checked">
-                 <bool>true</bool>
+                 <bool>false</bool>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QRadioButton" name="radioButton_6">
+               <widget class="QRadioButton" name="radioButtonClass">
                 <property name="text">
                  <string>Class</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
                 </property>
                </widget>
               </item>
@@ -240,27 +243,27 @@
             </widget>
            </item>
            <item>
-            <widget class="QGroupBox" name="groupBox">
+            <widget class="QGroupBox" name="groupBoxStaticTimer">
              <property name="title">
               <string>Static Timer</string>
              </property>
              <layout class="QHBoxLayout" name="horizontalLayout_4">
               <item>
-               <widget class="QRadioButton" name="radioButton_2">
+               <widget class="QRadioButton" name="radioButton30s">
                 <property name="text">
                  <string>30s</string>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QRadioButton" name="radioButton">
+               <widget class="QRadioButton" name="radioButton1min">
                 <property name="text">
                  <string>1m</string>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QRadioButton" name="radioButton_3">
+               <widget class="QRadioButton" name="radioButton2min">
                 <property name="text">
                  <string>2m</string>
                 </property>
@@ -270,14 +273,14 @@
                </widget>
               </item>
               <item>
-               <widget class="QRadioButton" name="radioButton_4">
+               <widget class="QRadioButton" name="radioButton5min">
                 <property name="text">
                  <string>5m</string>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QRadioButton" name="radioButton_5">
+               <widget class="QRadioButton" name="radioButton15min">
                 <property name="text">
                  <string>15m</string>
                 </property>
@@ -287,47 +290,63 @@
             </widget>
            </item>
            <item>
-            <widget class="QGroupBox" name="groupBox_3">
+            <widget class="QGroupBox" name="groupBoxClassDuration">
              <property name="title">
               <string>Class Duration</string>
              </property>
              <layout class="QHBoxLayout" name="horizontalLayout_5">
               <item>
-               <widget class="QRadioButton" name="radioButton_8">
+               <widget class="QRadioButton" name="radioButtonClass10min">
                 <property name="text">
                  <string>10min</string>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QRadioButton" name="radioButton_9">
+               <widget class="QRadioButton" name="radioButtonClass20min">
                 <property name="text">
                  <string>20min</string>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QRadioButton" name="radioButton_10">
+               <widget class="QRadioButton" name="radioButtonClass30min">
                 <property name="text">
                  <string>30min</string>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QRadioButton" name="radioButton_11">
+               <widget class="QRadioButton" name="radioButtonClass45min">
                 <property name="text">
                  <string>45min</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QRadioButton" name="radioButton_12">
+               <widget class="QRadioButton" name="radioButtonClass60min">
                 <property name="text">
                  <string>60min</string>
                 </property>
                </widget>
               </item>
              </layout>
+            </widget>
+           </item>
+           <item>
+            <widget class="QTextBrowser" name="textBrowser">
+             <property name="autoFillBackground">
+              <bool>true</bool>
+             </property>
+             <property name="frameShape">
+              <enum>QFrame::NoFrame</enum>
+             </property>
+             <property name="textInteractionFlags">
+              <set>Qt::NoTextInteraction</set>
+             </property>
             </widget>
            </item>
            <item>
